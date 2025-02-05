@@ -317,7 +317,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "list_pull_requests": {
         const args = pulls.ListPullRequestsSchema.parse(request.params.arguments);
-        const pullRequests = await pulls.listPullRequests(args);
+        const { owner, repo, ...options } = args;
+        const pullRequests = await pulls.listPullRequests(owner, repo, options);
         return {
           content: [{ type: "text", text: JSON.stringify(pullRequests, null, 2) }],
         };
@@ -325,7 +326,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "create_pull_request_review": {
         const args = pulls.CreatePullRequestReviewSchema.parse(request.params.arguments);
-        const review = await pulls.createPullRequestReview(args);
+        const { owner, repo, pull_number, ...options } = args;
+        const review = await pulls.createPullRequestReview(owner, repo, pull_number, options);
         return {
           content: [{ type: "text", text: JSON.stringify(review, null, 2) }],
         };
@@ -333,7 +335,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "merge_pull_request": {
         const args = pulls.MergePullRequestSchema.parse(request.params.arguments);
-        const result = await pulls.mergePullRequest(args);
+        const { owner, repo, pull_number, ...options } = args;
+        const result = await pulls.mergePullRequest(owner, repo, pull_number, options);
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         };
@@ -357,7 +360,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "update_pull_request_branch": {
         const args = pulls.UpdatePullRequestBranchSchema.parse(request.params.arguments);
-        const result = await pulls.updatePullRequestBranch(args);
+        const { owner, repo, pull_number, expected_head_sha } = args;
+        const result = await pulls.updatePullRequestBranch(owner, repo, pull_number, expected_head_sha);
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         };
