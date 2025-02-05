@@ -361,9 +361,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "update_pull_request_branch": {
         const args = pulls.UpdatePullRequestBranchSchema.parse(request.params.arguments);
         const { owner, repo, pull_number, expected_head_sha } = args;
-        const result = await pulls.updatePullRequestBranch(owner, repo, pull_number, expected_head_sha);
+        await pulls.updatePullRequestBranch(owner, repo, pull_number, expected_head_sha);
         return {
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          content: [{ type: "text", text: JSON.stringify({ success: true }, null, 2) }],
         };
       }
 
