@@ -1,12 +1,14 @@
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import {z} from "zod";
+import type {Request} from "@modelcontextprotocol/sdk/types.js";
 
 
 const server = new McpServer({
     name: "linear",
     version: "1.0.0",
 });
+
 
 
 server.tool(
@@ -28,24 +30,52 @@ server.tool(
     },
 );
 
-server.resource(
-    "person",
-    {
-        name: z.string().describe("Name of the person"),
-        age: z.number().describe("Age of the person"),
-    },
-    {
-        get: async ({id}) => {
-            return {
-                name: "Alice",
-                age: 42,
-            };
-        },
-        set: async ({id, data}) => {
-            console.log("Setting person", id, data);
-        },
-    },
-)
+// List available resources
+server.server.setRequestHandler(
+    z.object({
+        method: z.literal("listResources")
+    }), 
+    async () => {
+      return {
+        resources: [
+          {
+            uri: "file:///logs/app.log",
+            name: "Application Logs",
+            mimeType: "text/plain"
+          }
+        ]
+      };
+    }
+);
+  
+// Read resource contents
+server.server.setRequestHandler(
+    z.object({
+        method: z.literal("readResource"),
+        params: z.object({
+            uri: z.string()
+        })
+    }), 
+    async (request) => {
+      const uri = request.params.uri;
+    
+      if (uri === "file:///logs/app.log") {
+        const logContents = 'Log contents go here';
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: "text/plain",
+              text: logContents
+            }
+          ]
+        };
+      }
+    
+      throw new Error("Resource not found");
+    }
+);
+
 
 async function main() {
     const transport = new StdioServerTransport();
