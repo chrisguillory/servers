@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "name": "postgres2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.4.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.11"
+  }
+}
