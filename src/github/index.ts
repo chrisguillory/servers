@@ -67,7 +67,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "create_or_update_file",
-        description: "Create or update a single file in a GitHub repository",
+        description: "Create or update a single file in a GitHub repository. For larger files, use " +
+          "'published_artifact_url' instead of 'content'. The URL should point to a published artifact " +
+          "containing the file content in a single <code> block. Note: The user must manually publish " +
+          "the artifact and provide the resulting URL; it cannot be generated automatically.",
         inputSchema: zodToJsonSchema(files.CreateOrUpdateFileSchema),
       },
       {
@@ -280,6 +283,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args.repo,
           args.path,
           args.content,
+          args.published_artifact_url,
           args.message,
           args.branch,
           args.sha

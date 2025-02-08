@@ -20,6 +20,7 @@ MCP Server for the GitHub API, enabling file operations, repository management, 
      - `repo` (string): Repository name
      - `path` (string): Path where to create/update the file
      - `content` (string): Content of the file
+     - `published_artifact_url` (optional string): Public URL of a published artifact, which contains the file content in a single <code> block
      - `message` (string): Commit message
      - `branch` (string): Branch to create/update the file in
      - `sha` (optional string): SHA of file being replaced (for updates)
