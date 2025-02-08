@@ -19,11 +19,28 @@ export const CreateOrUpdateFileSchema = z.object({
   owner: z.string().describe("Repository owner (username or organization)"),
   repo: z.string().describe("Repository name"),
   path: z.string().describe("Path where to create/update the file"),
-  content: z.string().describe("Content of the file"),
+  content: z.string().optional().describe("Content of the file"),
+  published_artifact_url: z.string().optional().describe("Public URL of a published artifact containing the file content in a single <code> block"),
   message: z.string().describe("Commit message"),
   branch: z.string().describe("Branch to create/update the file in"),
   sha: z.string().optional().describe("SHA of the file being replaced (required when updating existing files)"),
-});
+})
+    .refine(
+        (data: z.infer<typeof CreateOrUpdateFileSchema>) =>
+            data.content !== undefined || data.published_artifact_url !== undefined,
+        {
+          message: "Either 'content' or 'published_artifact_url' must be provided",
+          path: ["content", "published_artifact_url"]
+        }
+    )
+    .refine(
+        (data: z.infer<typeof CreateOrUpdateFileSchema>) =>
+            !(data.content !== undefined && data.published_artifact_url !== undefined),
+        {
+          message: "Only one of 'content' or 'published_artifact_url' can be provided",
+          path: ["content", "published_artifact_url"]
+        }
+    );
 
 export const GetFileContentsSchema = z.object({
   owner: z.string().describe("Repository owner (username or organization)"),
@@ -91,16 +108,50 @@ export async function getFileContents(
   return data;
 }
 
+function decodeHTMLEntities(str: string): string {
+  const entities: Record<string, string> = {
+    '&quot;': '"',
+    '&amp;': '&',
+    '&apos;': "'",
+    '&lt;': '<',
+    '&gt;': '>',
+    '&#x27;': "'",
+    // Add more entities as needed
+  };
+  return str.replace(/&[a-zA-Z0-9#]+;/g, (match) => entities[match] || match);
+}
+
 export async function createOrUpdateFile(
   owner: string,
   repo: string,
   path: string,
   content: string,
+  published_artifact_url: string,
   message: string,
   branch: string,
   sha?: string
 ) {
-  const encodedContent = Buffer.from(content).toString("base64");
+  let fileContent: string;
+
+  if (content !== undefined) {
+    fileContent = content;
+  } else if (published_artifact_url !== undefined) {
+    // Fetch the content from the published artifact URL
+    const response = await fetch(published_artifact_url);
+    const html = await response.text();
+    const codeBlockRegex = /<code[^>]*?>(.*?)<\/code>/s; // Regex to match one <code> tag
+    const match = html.match(codeBlockRegex);
+
+    if (!match) {
+      throw new Error("Could not find a singular <code> block in the published artifact");
+    }
+
+    const decodedContent = decodeHTMLEntities(match[1]);
+    fileContent = decodedContent;
+  } else {
+    throw new Error("Either 'content' or 'published_artifact_url' must be provided");
+  }
+  const encodedContent = Buffer.from(fileContent).toString("base64");
 
   let currentSha = sha;
   if (!currentSha) {
