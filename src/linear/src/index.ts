@@ -28,6 +28,25 @@ server.tool(
     },
 );
 
+server.resource(
+    "person",
+    {
+        name: z.string().describe("Name of the person"),
+        age: z.number().describe("Age of the person"),
+    },
+    {
+        get: async ({id}) => {
+            return {
+                name: "Alice",
+                age: 42,
+            };
+        },
+        set: async ({id, data}) => {
+            console.log("Setting person", id, data);
+        },
+    },
+)
+
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
