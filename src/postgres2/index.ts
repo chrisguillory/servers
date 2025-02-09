@@ -1,5 +1,8 @@
+// noinspection SqlNoDataSourceInspection
+
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
+import {ResourceTemplate} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {z} from "zod";
 import pg from "pg";
 
@@ -62,39 +65,38 @@ server.resource(
         list: async () => {
             const client = await pool.connect();
             try {
+
                 const result = await client.query(
                     "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
                 );
-                return result.rows.map((row) => ({
-                    uri: new URL(`${row.table_name}/schema`, resourceBaseUrl).href,
-                    mimeType: "application/json",
-                    name: `"${row.table_name}" database schema`,
-                }));
+                return {
+                    resources: result.rows.map((row) => ({
+                        uri: new URL(`${row.table_name}/schema`, resourceBaseUrl).href,
+                        mimeType: "application/json",
+                        name: `"${row.table_name}" database schema`,
+                    }))
+                };
             } finally {
                 client.release();
             }
         }
     }),
     // Read handler for individual table schemas
-    async (uri, { table }) => {
+    async (uri, {table}) => {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                SELECT 
-                    column_name,
-                    data_type,
-                    is_nullable,
-                    column_default,
-                    character_maximum_length,
-                    numeric_precision,
-                    numeric_scale
-                FROM 
-                    information_schema.columns
-                WHERE 
-                    table_schema = 'public'
-                    AND table_name = $1
-                ORDER BY 
-                    ordinal_position
+                SELECT column_name,
+                       data_type,
+                       is_nullable,
+                       column_default,
+                       character_maximum_length,
+                       numeric_precision,
+                       numeric_scale
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = $1
+                ORDER BY ordinal_position
             `, [table]);
 
             if (result.rows.length === 0) {
